@@ -2,12 +2,12 @@
 #================= Plotting UEDGE 2D data on mesh  ===============#
 #
 #-Usage:
-# execfile("../pylib/plotmesh.py") 
+# execfile("../pylib/plotvar.py") 
 # plotvar(var)
 # plotvar(var, iso=True)
 #
 # Input arguments:
-#   var(0:com.ny+2, 0:com.ny+2)
+#   var(0:com.nx+2, 0:com.ny+2)
 #
 #-Optional arguments:
 #   iso (True/False) - True for equal aspect ratio
@@ -19,16 +19,41 @@
 # fig1 = plt.figure(); plotvar(com.rm[:,:,0])
 #
 # First coding: MVU, 22-jul-17
+# log,axis,cmap keywords: BD, 28-Feb-20
 #=================================================================#
 
+from uedge import com
+
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 
-
-def plotvar(var, iso=False, title="UEDGE data"):
+def plotvar(var, iso=False, title="UEDGE data", show=True, axis=None, cmap=None, log=False):
+    """Plot UEDGE 2D data on mesh
     
+    Input arguments:
+      var(0:com.nx+2, 0:com.ny+2)
+
+    Optional arguments:
+      iso (True/False)  - True for equal aspect ratio
+      title             - The figure title
+      show (True/False) - Call plt.show() at the end?
+      axis              - Plot on given axis.
+      cmap              - Specify a colormap
+      log (True/False)  - If true, use a logarithmic scale
+
+    Returns
+      axis     The axis plotted on
+
+    Usage example:
+       plotvar(com.rm[:,:,0])
+
+       plotvar(bbb.te/bbb.ev, log=True, show=False, iso=True)
+       plt.savefig("logte.pdf")
+       plt.show()
+    """
     patches = []
 
     for iy in np.arange(0,com.ny+2):
@@ -48,28 +73,29 @@ def plotvar(var, iso=False, title="UEDGE data"):
             k=ix+(com.nx+2)*iy
             vals[k] = var[ix,iy]
 
-    p = PatchCollection(patches)
+    if log:
+        p = PatchCollection(patches, norm=matplotlib.colors.LogNorm())
+    else:
+        p = PatchCollection(patches)
     p.set_array(np.array(vals))
 
-
-
-
-    fig,ax = plt.subplots(1)
-
-    ax.add_collection(p)
-    ax.autoscale_view()
+    if axis is None:
+        fig,axis = plt.subplots(1)
+        
+    axis.add_collection(p)
+    axis.autoscale_view()
     plt.colorbar(p)
     
-    fig.suptitle(title)
-    plt.xlabel('R [m]')
-    plt.ylabel('Z [m]')
-    plt.grid(True)
+    axis.set_title(title)
+    axis.set_xlabel('R [m]')
+    axis.set_ylabel('Z [m]')
+    axis.grid(True)
 
-    #if (iso):
-    #    plt.axes().set_aspect('equal', 'datalim')
-    #else:
-    #    plt.axes().set_aspect('auto', 'datalim')
+    if iso:
+        axis.set_aspect('equal')
 
-    plt.show()
+    if show:
+        plt.show()
+    return axis
 
 #=================================================================#
